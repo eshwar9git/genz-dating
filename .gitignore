@@ -30,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -46,6 +47,7 @@ android/app/build/
 android/build/
 android/captures/
 android/local.properties
+android/.idea/
 ios/App/Pods/
 ios/App/build/
 *.xcworkspace/xcuserdata/
