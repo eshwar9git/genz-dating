@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>vibed — can't connect</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #07080c;
+        color: #f7f3ec;
+        font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+      }
+      .wrap {
+        max-width: 22rem;
+      }
+      .brand {
+        font-weight: 800;
+        font-size: 2rem;
+        letter-spacing: -0.04em;
+      }
+      .dot {
+        color: #ff3d68;
+      }
+      h1 {
+        margin: 1rem 0 0.5rem;
+        font-size: 1.15rem;
+      }
+      p,
+      li {
+        opacity: 0.7;
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+      ol {
+        padding-left: 1.1rem;
+        margin: 0.75rem 0 0;
+      }
+      code {
+        color: #3dffb5;
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brand">vibed<span class="dot">.</span></div>
+      <h1>Can't reach the vibed server</h1>
+      <p>
+        The Android app loads your Next.js app from the host machine. Fix these,
+        then rebuild:
+      </p>
+      <ol>
+        <li>On your PC run <code>npm run dev</code> (port 2000).</li>
+        <li>
+          Sync for emulator:
+          <code>npm run mobile:sync:android</code>
+        </li>
+        <li>Rebuild / Run in Android Studio.</li>
+        <li>
+          Emulator URL must be <code>http://10.0.2.2:2000</code> (not
+          localhost).
+        </li>
+      </ol>
+    </div>
+  </body>
+</html>
