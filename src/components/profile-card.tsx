@@ -5,7 +5,10 @@ import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { BadgeCheck, MapPin } from "lucide-react";
 import { useState } from "react";
 import type { UserProfile } from "@/lib/types";
+import { formatDistanceKm } from "@/lib/i18n";
+import { useAppStore } from "@/lib/store";
 import { lookingForLabel } from "@/lib/utils";
+import { SafetyActions } from "@/components/safety-actions";
 import {
   IconAura,
   IconGhost,
@@ -31,6 +34,7 @@ export function ProfileCard({
   canRewind: boolean;
   remainingLikes: string;
 }) {
+  const countryCode = useAppStore((s) => s.user?.countryCode);
   const [photoIndex, setPhotoIndex] = useState(0);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-220, 220], [-14, 14]);
@@ -61,7 +65,7 @@ export function ProfileCard({
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.85}
         onDragEnd={handleDragEnd}
-        className="relative min-h-[62dvh] flex-1 overflow-hidden rounded-[32px] bg-ink-elevated shadow-[0_30px_80px_rgba(0,0,0,0.55)] ring-1 ring-white/10"
+        className="relative min-h-[min(58dvh,520px)] flex-1 overflow-hidden rounded-[32px] bg-ink-elevated shadow-[0_30px_80px_rgba(0,0,0,0.55)] ring-1 ring-white/10"
       >
         <div className="absolute inset-0">
           <Image
@@ -69,7 +73,8 @@ export function ProfileCard({
             alt={profile.name}
             fill
             className="object-cover"
-            sizes="(max-width: 512px) 100vw, 448px"
+            sizes="100vw"
+            quality={90}
             priority
             draggable={false}
           />
@@ -77,7 +82,15 @@ export function ProfileCard({
           <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-ink/50 to-transparent" />
         </div>
 
-        <div className="absolute inset-x-4 top-4 z-10 flex gap-1.5">
+        <div className="absolute right-3 top-3 z-20">
+          <SafetyActions
+            profileId={profile.id}
+            profileName={profile.name}
+            compact
+          />
+        </div>
+
+        <div className="absolute inset-x-4 top-4 z-10 flex gap-1.5 pr-12">
           {profile.photos.map((_, i) => (
             <div
               key={i}
@@ -145,7 +158,7 @@ export function ProfileCard({
                   {profile.city}
                 </span>
                 <span className="text-cream/50">·</span>
-                <span>{profile.distanceKm} km</span>
+                <span>{formatDistanceKm(profile.distanceKm, countryCode)}</span>
                 <span className="text-cream/50">·</span>
                 <span className="uppercase tracking-wider text-[11px] text-cream/60">
                   {profile.countryCode}
@@ -175,7 +188,7 @@ export function ProfileCard({
       </motion.div>
 
       {/* GenZ action dock — equal size orbs */}
-      <div className="mt-5 flex items-end justify-center gap-3.5 pb-1">
+      <div className="mt-4 flex shrink-0 items-end justify-center gap-3.5 pb-2">
         <ActionOrb
           label="Yoink"
           onClick={() => {

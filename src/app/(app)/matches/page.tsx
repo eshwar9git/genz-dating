@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { BrandMark } from "@/components/ui";
 import { SITUATIONSHIP_OPTIONS } from "@/lib/constants";
 import { getProfileById } from "@/lib/mock-data";
 import { useAppStore } from "@/lib/store";
@@ -14,8 +13,7 @@ export default function MatchesPage() {
 
   return (
     <div className="px-4 pt-5">
-      <BrandMark href="/discover" />
-      <h1 className="mt-5 font-display text-[1.85rem] font-extrabold tracking-tight">
+      <h1 className="font-display text-[1.85rem] font-extrabold tracking-tight">
         Matches
       </h1>
       <p className="mt-1 text-sm text-muted">

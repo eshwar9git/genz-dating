@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { upsertEntitlement } from "@/lib/entitlements";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 
 export async function POST(req: Request) {
@@ -31,16 +32,39 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
-        console.log("[vibed] subscription checkout completed", {
-          customer: session.customer,
-          tier: session.metadata?.tier,
-          userId: session.metadata?.userId,
-        });
-        // Production: persist entitlement in your database here.
+        const tier = session.metadata?.tier;
+        const userId = session.metadata?.userId ?? "";
+        if (tier === "plus" || tier === "ultra") {
+          upsertEntitlement({
+            userId,
+            tier,
+            stripeCustomerId:
+              typeof session.customer === "string"
+                ? session.customer
+                : undefined,
+            stripeSubscriptionId:
+              typeof session.subscription === "string"
+                ? session.subscription
+                : undefined,
+            updatedAt: new Date().toISOString(),
+            source: "checkout.session.completed",
+          });
+        }
         break;
       }
       case "customer.subscription.deleted": {
-        console.log("[vibed] subscription canceled", event.data.object.id);
+        const sub = event.data.object;
+        const userId =
+          typeof sub.metadata?.userId === "string" ? sub.metadata.userId : "";
+        upsertEntitlement({
+          userId,
+          tier: "free",
+          stripeCustomerId:
+            typeof sub.customer === "string" ? sub.customer : undefined,
+          stripeSubscriptionId: sub.id,
+          updatedAt: new Date().toISOString(),
+          source: "customer.subscription.deleted",
+        });
         break;
       }
       default:

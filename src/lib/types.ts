@@ -171,6 +171,14 @@ export interface UsageLimits {
   adRewindsWatched: number;
 }
 
+export interface UserReport {
+  id: string;
+  targetUserId: string;
+  reason: string;
+  details?: string;
+  createdAt: string;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -198,6 +206,12 @@ export interface AuthUser {
   matches: Match[];
   messages: Message[];
   likedMeIds: string[];
+  /** Profiles the user has blocked (hidden from discovery & chats) */
+  blockedIds: string[];
+  /** Local report log (ship to backend when available) */
+  reports: UserReport[];
+  /** ISO timestamp when user accepted Terms + Privacy */
+  acceptedTermsAt?: string;
   passportCity?: string;
   passportCountry?: string;
   auraBoostUntil?: string;

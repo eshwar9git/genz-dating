@@ -69,26 +69,33 @@ Still on you:
 
 | Document / process | Notes |
 |---|---|
-| Terms of Service | Age, conduct, subscriptions, bans |
-| Privacy Policy | Photos, location, payments, retention |
+| Terms of Service | ✅ `/legal/terms` (have counsel review before launch) |
+| Privacy Policy | ✅ `/legal/privacy` |
+| Community Guidelines | ✅ `/legal/community` |
+| Signup acceptance | ✅ 18+ + Terms checkbox on register |
+| Report / block | ✅ In-app Safety on Discover + chat |
+| Delete account | ✅ Profile → Delete account (local wipe; wire to API when DB exists) |
 | Cookie / tracking notice | If you use analytics |
-| GDPR / CCPA | Data export & delete account |
-| Age verification | 18+ gate (already in signup) |
-| Content moderation policy | Reports, NSFW, harassment |
 | Tax / VAT | Stripe Tax or accountant |
 
 ---
 
 ## 6. Replace the demo backend
 
-Today auth + matches live in **browser localStorage**. Before a real launch you need:
+Today auth + matches live in **browser localStorage**. Before a real store launch you still need:
 
 1. Real auth (email magic link, Apple, Google)  
 2. User / match / message tables  
 3. Photo & reel upload pipeline + CDN  
-4. Server-side entitlement from Stripe webhooks  
+4. Persist Stripe entitlements in DB (webhook writes in-memory today; success page verifies via `/api/checkout/verify`)  
 5. Push notifications (optional but expected)  
-6. Admin tools for bans / reports  
+6. Admin tools for bans / reports (client reports are stored locally until then)  
+
+Also for native store builds:
+
+- Set `CAPACITOR_SERVER_URL=https://your-domain.com` then `npm run mobile:sync`
+- Replace AdMob sample IDs (`NEXT_PUBLIC_ADMOB_*` + Android/iOS plist)
+- Confirm Apple IAP / Play Billing rules if charging inside the app shell
 
 ---
 

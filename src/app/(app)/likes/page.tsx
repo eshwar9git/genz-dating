@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Lock } from "lucide-react";
-import { BrandMark, Button, LimitBanner } from "@/components/ui";
+import { Button, LimitBanner } from "@/components/ui";
 import { getProfileById } from "@/lib/mock-data";
 import { useAppStore } from "@/lib/store";
 import { canSeeWhoLikedYou } from "@/lib/utils";
@@ -11,16 +11,24 @@ import { canSeeWhoLikedYou } from "@/lib/utils";
 export default function LikesPage() {
   const user = useAppStore((s) => s.user)!;
   const unlocked = canSeeWhoLikedYou(user);
+  const blocked = new Set(user.blockedIds ?? []);
   const likers = user.likedMeIds
     .map(getProfileById)
     .filter(Boolean)
-    .filter((p) => !user.likedIds.includes(p!.id) && !user.passedIds.includes(p!.id));
+    .filter(
+      (p) =>
+        !blocked.has(p!.id) &&
+        !user.likedIds.includes(p!.id) &&
+        !user.passedIds.includes(p!.id)
+    );
 
   return (
     <div className="px-4 pt-5">
       <header className="mb-6 flex items-center justify-between">
         <div>
-          <BrandMark href="/discover" />
+          <h1 className="font-display text-2xl font-extrabold tracking-tight">
+            Likes
+          </h1>
           <p className="mt-1 text-sm text-muted">People who vibed with you</p>
         </div>
         <span className="rounded-full border border-coral/30 bg-coral/15 px-3 py-1 text-xs font-bold text-coral">
@@ -47,6 +55,7 @@ export default function LikesPage() {
               src={p!.photos[0]}
               alt={p!.name}
               fill
+              sizes="(max-width: 512px) 50vw, 224px"
               className={`object-cover transition duration-500 group-hover:scale-105 ${!unlocked ? "scale-110 blur-xl" : ""}`}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />

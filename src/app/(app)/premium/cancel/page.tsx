@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BrandMark, Button } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { useLocaleStore } from "@/lib/locale-store";
 
 export default function PremiumCancelPage() {
@@ -9,7 +9,6 @@ export default function PremiumCancelPage() {
 
   return (
     <div className="mesh-bg flex min-h-dvh flex-col px-6 py-10">
-      <BrandMark href="/discover" />
       <div className="mx-auto mt-16 w-full max-w-md text-center">
         <h1 className="font-display text-3xl font-extrabold">
           {t.payments.cancelTitle}

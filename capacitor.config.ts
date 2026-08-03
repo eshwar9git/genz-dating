@@ -3,13 +3,17 @@ import type { CapacitorConfig } from "@capacitor/cli";
 /**
  * vibed native shell (iOS + Android) via Capacitor.
  *
- * Android emulator default: http://10.0.2.2:2000 (emulator alias for host loopback).
- * No adb reverse required. Override with CAPACITOR_SERVER_URL for device/prod.
+ * Default: http://localhost:2000 + `adb reverse tcp:2000 tcp:2000`
+ * (works for USB physical phones AND the Android emulator).
  *
- * Prod: set CAPACITOR_SERVER_URL to your deployed HTTPS URL before `npx cap sync`.
+ * Alternatives via CAPACITOR_SERVER_URL:
+ * - Emulator without reverse: http://10.0.2.2:2000
+ * - Phone on Wi‑Fi (no USB):   http://YOUR_PC_LAN_IP:2000
+ * - Production:                https://your-domain.com
  */
 const serverUrl =
-  process.env.CAPACITOR_SERVER_URL || "http://10.0.2.2:2000";
+  process.env.CAPACITOR_SERVER_URL || "http://localhost:2000";
+const isHttps = serverUrl.startsWith("https://");
 
 const config: CapacitorConfig = {
   appId: "app.vibed.dating",
@@ -17,8 +21,8 @@ const config: CapacitorConfig = {
   webDir: "mobile/www",
   server: {
     url: serverUrl,
-    cleartext: serverUrl.startsWith("http://"),
-    androidScheme: "http",
+    cleartext: !isHttps && serverUrl.startsWith("http://"),
+    androidScheme: isHttps ? "https" : "http",
     allowNavigation: [
       "checkout.stripe.com",
       "*.stripe.com",
@@ -59,7 +63,7 @@ const config: CapacitorConfig = {
     scheme: "vibed",
   },
   android: {
-    allowMixedContent: true,
+    allowMixedContent: !isHttps,
     backgroundColor: "#07080c",
   },
 };

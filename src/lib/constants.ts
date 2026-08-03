@@ -206,6 +206,8 @@ export const COUNTRY_TIMEZONE: Record<string, string> = {
   MX: "America/Mexico_City",
   KR: "Asia/Seoul",
   ZA: "Africa/Johannesburg",
+  KE: "Africa/Nairobi",
+  NL: "Europe/Amsterdam",
 };
 
 export const COUNTRIES = [
@@ -224,6 +226,8 @@ export const COUNTRIES = [
   { code: "MX", name: "Mexico", cities: ["Mexico City", "Guadalajara"] },
   { code: "KR", name: "South Korea", cities: ["Seoul", "Busan"] },
   { code: "ZA", name: "South Africa", cities: ["Cape Town", "Johannesburg"] },
+  { code: "KE", name: "Kenya", cities: ["Nairobi", "Mombasa"] },
+  { code: "NL", name: "Netherlands", cities: ["Amsterdam", "Rotterdam"] },
 ];
 
 export const FREE_LIMITS = {

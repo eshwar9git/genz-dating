@@ -22,4 +22,12 @@ export function getDict(locale: Locale): Dict {
 }
 
 export type { Dict, Locale };
-export { LOCALES, localeFromCountry, currencyFromCountry, COUNTRY_CURRENCY } from "./locales";
+export {
+  LOCALES,
+  localeFromCountry,
+  currencyFromCountry,
+  COUNTRY_CURRENCY,
+  distanceUnitFromCountry,
+  formatDistanceKm,
+} from "./locales";
+export type { DistanceUnit } from "./locales";

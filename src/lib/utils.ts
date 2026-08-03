@@ -5,6 +5,7 @@ import {
   PLUS_LIMITS,
   ULTRA_LIMITS,
 } from "./constants";
+import { MOCK_PROFILES } from "./mock-data";
 import type {
   AdRewardKind,
   AuthUser,
@@ -258,6 +259,8 @@ export function overlappingSlots(
 }
 
 export function migrateUser(user: AuthUser): AuthUser {
+  const validIds = new Set(MOCK_PROFILES.map((p) => p.id));
+
   const usage = maybeResetUsage({
     ...freshUsage(),
     ...user.usage,
@@ -269,6 +272,19 @@ export function migrateUser(user: AuthUser): AuthUser {
     adReelsWatched: user.usage?.adReelsWatched ?? 0,
     adRewindsWatched: user.usage?.adRewindsWatched ?? 0,
   });
+
+  let likedMeIds = (user.likedMeIds ?? []).filter((id) => validIds.has(id));
+  if (likedMeIds.length < 6) {
+    const extras = MOCK_PROFILES.filter(
+      (p) => p.id !== user.id && !likedMeIds.includes(p.id)
+    )
+      .filter((_, i) => i % 7 === 0)
+      .map((p) => p.id);
+    likedMeIds = [...likedMeIds, ...extras].slice(0, 12);
+  }
+
+  const blockedIds = user.blockedIds ?? [];
+
   return {
     ...user,
     timezone: user.timezone ?? "America/New_York",
@@ -280,20 +296,34 @@ export function migrateUser(user: AuthUser): AuthUser {
     // Legacy accounts skip the intro tour; new signups set this to false on register
     hasSeenFeatureTour: user.hasSeenFeatureTour ?? true,
     myReels: user.myReels ?? [],
+    blockedIds,
+    reports: user.reports ?? [],
+    likedIds: (user.likedIds ?? []).filter(
+      (id) => validIds.has(id) && !blockedIds.includes(id)
+    ),
+    passedIds: (user.passedIds ?? []).filter((id) => validIds.has(id)),
+    superLikedIds: (user.superLikedIds ?? []).filter(
+      (id) => validIds.has(id) && !blockedIds.includes(id)
+    ),
+    likedMeIds: likedMeIds.filter((id) => !blockedIds.includes(id)),
     preferences: {
       ...user.preferences,
       reelFlagFilter: user.preferences?.reelFlagFilter ?? "all",
     },
     usage,
-    matches: (user.matches ?? []).map((m) => ({
-      ...m,
-      softLaunchPrivate: m.softLaunchPrivate ?? true,
-      softLaunchUnlockedByMe: m.softLaunchUnlockedByMe ?? false,
-      softLaunchUnlockedByThem: m.softLaunchUnlockedByThem ?? false,
-      situationshipStatus: m.situationshipStatus ?? "undefined",
-      vibeCheckMe: m.vibeCheckMe ?? [],
-      vibeCheckThem: m.vibeCheckThem ?? [],
-      proposedSlots: m.proposedSlots ?? [],
-    })),
+    matches: (user.matches ?? [])
+      .filter(
+        (m) => validIds.has(m.userId) && !blockedIds.includes(m.userId)
+      )
+      .map((m) => ({
+        ...m,
+        softLaunchPrivate: m.softLaunchPrivate ?? true,
+        softLaunchUnlockedByMe: m.softLaunchUnlockedByMe ?? false,
+        softLaunchUnlockedByThem: m.softLaunchUnlockedByThem ?? false,
+        situationshipStatus: m.situationshipStatus ?? "undefined",
+        vibeCheckMe: m.vibeCheckMe ?? [],
+        vibeCheckThem: m.vibeCheckThem ?? [],
+        proposedSlots: m.proposedSlots ?? [],
+      })),
   };
 }

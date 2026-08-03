@@ -26,6 +26,7 @@ import type {
   SituationshipStatus,
   SoftLaunchStory,
   SubscriptionTier,
+  UserReport,
   VibeCheckAnswer,
 } from "./types";
 import {
@@ -99,6 +100,9 @@ function demoTheirVibeCheck(): VibeCheckAnswer[] {
   }));
 }
 
+/** Guards React Strict Mode double-invoking watchReel on mount. */
+let lastWatchReelAt = 0;
+
 interface AppState {
   user: AuthUser | null;
   lastPassedId: string | null;
@@ -110,9 +114,17 @@ interface AppState {
   completeOnboarding: (payload: OnboardingPayload) => void;
   updatePreferences: (prefs: Partial<Preferences>) => void;
   updateProfile: (patch: Partial<AuthUser>) => void;
-  like: (profileId: string) => { matched: boolean; blocked?: "limit" };
+  like: (profileId: string) => {
+    matched: boolean;
+    matchId?: string;
+    blocked?: "limit";
+  };
   pass: (profileId: string) => { blocked?: "limit" };
-  superLike: (profileId: string) => { matched: boolean; blocked?: "limit" };
+  superLike: (profileId: string) => {
+    matched: boolean;
+    matchId?: string;
+    blocked?: "limit";
+  };
   rewind: () => { blocked?: "limit" | "none" };
   sendMessage: (matchId: string, text: string) => { blocked?: "vibe-check" };
   markMatchRead: (matchId: string) => void;
@@ -145,6 +157,15 @@ interface AppState {
     externalUrl?: string;
     flag?: ReelFlag;
   }) => { blocked?: "limit"; reel?: Reel };
+  blockUser: (profileId: string) => void;
+  unblockUser: (profileId: string) => void;
+  reportUser: (
+    profileId: string,
+    reason: string,
+    details?: string
+  ) => { blocked?: "none" | "duplicate" };
+  deleteAccount: () => void;
+  acceptTerms: () => void;
 }
 
 function calcAge(birthday: string) {
@@ -171,8 +192,10 @@ function defaultPrefs(): Preferences {
 }
 
 function createLikedMePool(userId: string) {
+  // Spread likes across the deck so "Who liked you" feels populated
   return MOCK_PROFILES.filter((p) => p.id !== userId)
-    .slice(0, 6)
+    .filter((_, i) => i % 7 === 0)
+    .slice(0, 12)
     .map((p) => p.id);
 }
 
@@ -221,6 +244,9 @@ export const useAppStore = create<AppState>()(
           challengeRewardClaimed: false,
           hasSeenFeatureTour: false,
           myReels: [],
+          blockedIds: [],
+          reports: [],
+          acceptedTermsAt: new Date().toISOString(),
         };
         set({ user, lastPassedId: null });
       },
@@ -235,6 +261,85 @@ export const useAppStore = create<AppState>()(
       },
 
       logout: () => set({ user: null, lastPassedId: null }),
+
+      deleteAccount: () => {
+        // Clears local profile data (production: also DELETE /api/account)
+        set({ user: null, lastPassedId: null });
+        try {
+          localStorage.removeItem("vibed-storage");
+        } catch {
+          /* ignore */
+        }
+      },
+
+      acceptTerms: () => {
+        const user = get().user;
+        if (!user) return;
+        set({
+          user: { ...user, acceptedTermsAt: new Date().toISOString() },
+        });
+      },
+
+      blockUser: (profileId) => {
+        const user = get().user;
+        if (!user || !profileId || profileId === user.id) return;
+        const blockedIds = user.blockedIds.includes(profileId)
+          ? user.blockedIds
+          : [...user.blockedIds, profileId];
+        const removedMatchIds = new Set(
+          user.matches.filter((m) => m.userId === profileId).map((m) => m.id)
+        );
+        set({
+          user: {
+            ...user,
+            blockedIds,
+            likedIds: user.likedIds.filter((id) => id !== profileId),
+            likedMeIds: user.likedMeIds.filter((id) => id !== profileId),
+            matches: user.matches.filter((m) => m.userId !== profileId),
+            messages: user.messages.filter(
+              (msg) => !removedMatchIds.has(msg.matchId)
+            ),
+          },
+          lastPassedId:
+            get().lastPassedId === profileId ? null : get().lastPassedId,
+        });
+      },
+
+      unblockUser: (profileId) => {
+        const user = get().user;
+        if (!user) return;
+        set({
+          user: {
+            ...user,
+            blockedIds: user.blockedIds.filter((id) => id !== profileId),
+          },
+        });
+      },
+
+      reportUser: (profileId, reason, details) => {
+        const user = get().user;
+        if (!user || !profileId) return { blocked: "none" as const };
+        const recent = user.reports.some(
+          (r) =>
+            r.targetUserId === profileId &&
+            Date.now() - new Date(r.createdAt).getTime() < 24 * 60 * 60 * 1000
+        );
+        if (recent) return { blocked: "duplicate" as const };
+        const report: UserReport = {
+          id: uid("report"),
+          targetUserId: profileId,
+          reason,
+          details: details?.trim() || undefined,
+          createdAt: new Date().toISOString(),
+        };
+        set({
+          user: {
+            ...user,
+            reports: [...user.reports, report],
+          },
+        });
+        return {};
+      },
 
       completeOnboarding: (payload) => {
         const user = get().user;
@@ -277,10 +382,18 @@ export const useAppStore = create<AppState>()(
         let matches = nextUser.matches;
         let matched = false;
 
+        let matchId: string | undefined;
         const addMatch = () => {
-          if (matches.some((m) => m.userId === profileId)) return;
+          const existing = matches.find((m) => m.userId === profileId);
+          if (existing) {
+            matched = true;
+            matchId = existing.id;
+            return;
+          }
+          const created = defaultMatch(profileId);
           matched = true;
-          matches = [defaultMatch(profileId), ...matches];
+          matchId = created.id;
+          matches = [created, ...matches];
         };
 
         if (likedMe) addMatch();
@@ -295,7 +408,7 @@ export const useAppStore = create<AppState>()(
           },
           lastPassedId: null,
         });
-        return { matched };
+        return { matched, matchId };
       },
 
       pass: (profileId) => {
@@ -324,10 +437,18 @@ export const useAppStore = create<AppState>()(
         let matches = nextUser.matches;
         let matched = false;
 
+        let matchId: string | undefined;
         const addMatch = () => {
-          if (matches.some((m) => m.userId === profileId)) return;
+          const existing = matches.find((m) => m.userId === profileId);
+          if (existing) {
+            matched = true;
+            matchId = existing.id;
+            return;
+          }
+          const created = defaultMatch(profileId);
           matched = true;
-          matches = [defaultMatch(profileId), ...matches];
+          matchId = created.id;
+          matches = [created, ...matches];
         };
 
         if (likedMe) addMatch();
@@ -347,7 +468,7 @@ export const useAppStore = create<AppState>()(
           },
           lastPassedId: null,
         });
-        return { matched };
+        return { matched, matchId };
       },
 
       rewind: () => {
@@ -460,6 +581,12 @@ export const useAppStore = create<AppState>()(
         const usage = maybeResetUsage(user.usage);
         const nextUser = { ...user, usage };
         if (!canWatchReel(nextUser)) return { blocked: "limit" };
+
+        // Dedupe Strict Mode double-effects so Free quota isn't burned 2× in dev
+        const now = Date.now();
+        if (now - lastWatchReelAt < 80) return {};
+        lastWatchReelAt = now;
+
         set({
           user: {
             ...nextUser,

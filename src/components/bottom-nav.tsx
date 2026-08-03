@@ -22,7 +22,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+    <nav className="fixed bottom-0 inset-x-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pt-2">
       <div className="glass-strong mx-auto flex max-w-lg items-stretch justify-between rounded-[28px] px-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href);

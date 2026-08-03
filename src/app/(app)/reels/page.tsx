@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ExternalLink,
@@ -22,7 +22,7 @@ import {
 } from "@/components/match-celebration";
 import { ReelComposer } from "@/components/reel-composer";
 import { AdLimitBanner, RewardedAdGate } from "@/components/rewarded-ad";
-import { BrandMark, Button, Chip } from "@/components/ui";
+import { Button, Chip } from "@/components/ui";
 import { REEL_FLAG_OPTIONS } from "@/lib/constants";
 import { MOCK_REELS, getProfileById } from "@/lib/mock-data";
 import { useAppStore } from "@/lib/store";
@@ -43,6 +43,7 @@ export default function ReelsPage() {
   const [index, setIndex] = useState(0);
   const [limitHit, setLimitHit] = useState(false);
   const [adOpen, setAdOpen] = useState(false);
+  const [likesAdOpen, setLikesAdOpen] = useState(false);
   const [likedReel, setLikedReel] = useState<Record<string, boolean>>({});
   const [showFilters, setShowFilters] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -72,18 +73,16 @@ export default function ReelsPage() {
       : [];
 
     const filter = user.preferences.reelFlagFilter ?? "all";
-    const base = [...aura, ...(user.myReels ?? []), ...MOCK_REELS].filter(
-      (r) => {
-        if (filter === "all") return true;
-        return r.flag === filter;
-      }
-    );
-    return base.length ? base : MOCK_REELS;
+    return [...aura, ...(user.myReels ?? []), ...MOCK_REELS].filter((r) => {
+      if (filter === "all") return true;
+      return r.flag === filter;
+    });
   }, [user]);
 
-  const reel = reels[index % reels.length];
-  const profile =
-    reel.userId === user.id
+  const safeIndex = reels.length ? index % reels.length : 0;
+  const reel = reels[safeIndex];
+  const profile = reel
+    ? reel.userId === user.id
       ? {
           id: user.id,
           name: user.name,
@@ -92,25 +91,93 @@ export default function ReelsPage() {
           photos: user.photos,
           lookingFor: user.lookingFor,
         }
-      : getProfileById(reel.userId);
+      : getProfileById(reel.userId)
+    : null;
   const usage = maybeResetUsage(user.usage);
   const reelsLimit = effectiveReelsLimit(user.tier, usage);
 
+  // Only count forward views — scrubbing back must not burn Free quota
+  const maxCountedIndex = useRef(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const gestureLock = useRef(false);
+  /** 1 = swipe up / next, -1 = swipe down / previous */
+  const [slideDir, setSlideDir] = useState<1 | -1>(1);
+
   useEffect(() => {
-    const res = watchReel();
-    if (res.blocked === "limit") setLimitHit(true);
+    if (!reels.length) return;
+    if (index <= maxCountedIndex.current) return;
+    maxCountedIndex.current = index;
+    const id = window.setTimeout(() => {
+      const res = watchReel();
+      if (res.blocked === "limit") setLimitHit(true);
+    }, 0);
+    return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index]);
+  }, [index, reels.length]);
 
   const next = () => {
-    // Don't advance while the free-limit gate is showing
-    if (limitHit) return;
+    if (limitHit || gestureLock.current) return;
+    gestureLock.current = true;
+    setSlideDir(1);
     setIndex((i) => i + 1);
+    window.setTimeout(() => {
+      gestureLock.current = false;
+    }, 420);
   };
 
-  const prev = () => setIndex((i) => Math.max(0, i - 1));
+  const prev = () => {
+    if (gestureLock.current || index <= 0) return;
+    gestureLock.current = true;
+    setSlideDir(-1);
+    setIndex((i) => Math.max(0, i - 1));
+    window.setTimeout(() => {
+      gestureLock.current = false;
+    }, 420);
+  };
 
-  if (!profile || !("photos" in profile) || !profile.photos?.[0]) return null;
+  // Vertical wheel / trackpad scroll (TikTok-style)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || limitHit) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (Math.abs(e.deltaY) < 18) return;
+      if (e.deltaY > 0) next();
+      else prev();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === "j") {
+        e.preventDefault();
+        next();
+      } else if (e.key === "ArrowUp" || e.key === "PageUp" || e.key === "k") {
+        e.preventDefault();
+        prev();
+      }
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("keydown", onKey);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", onKey);
+    };
+    // Rebind when index/limit change so handlers see fresh closures
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limitHit, index]);
+
+  if (!reels.length || !profile || !("photos" in profile) || !profile.photos?.[0]) {
+    return (
+      <div className="app-screen-height flex flex-col items-center justify-center gap-3 px-6 text-center">
+        <h1 className="font-display text-2xl font-extrabold">Reels</h1>
+        <p className="text-sm text-muted">
+          Nothing to show for this filter. Try another flag or post your own.
+        </p>
+        <Button size="sm" variant="mint" onClick={() => setComposerOpen(true)}>
+          <Plus className="h-3.5 w-3.5" /> Post a Reel
+        </Button>
+        <ReelComposer open={composerOpen} onClose={() => setComposerOpen(false)} />
+      </div>
+    );
+  }
 
   const flagColor =
     reel.flag === "green"
@@ -120,9 +187,19 @@ export default function ReelsPage() {
         : "border-white/20 bg-white/10 text-cream";
 
   return (
-    <div className="relative flex h-[calc(100dvh-6.5rem)] flex-col overflow-hidden">
-      <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-4 pt-5">
-        <BrandMark href="/discover" className="drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]" />
+    <div
+      ref={containerRef}
+      className="app-screen-height relative flex touch-pan-y flex-col overflow-hidden overscroll-none"
+      tabIndex={0}
+      aria-label="Reels feed. Swipe or scroll vertically to change reels."
+    >
+      <header
+        className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-4 pt-5"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <h1 className="font-display text-2xl font-extrabold tracking-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
+          Reels
+        </h1>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -183,14 +260,25 @@ export default function ReelsPage() {
           />
         </div>
       ) : (
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" custom={slideDir}>
           <motion.div
             key={reel.id}
-            initial={false}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, y: -30 }}
-            transition={{ duration: 0.35 }}
+            custom={slideDir}
+            initial={{ y: `${slideDir * 100}%`, opacity: 0.85 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: `${slideDir * -100}%`, opacity: 0.85 }}
+            transition={{ type: "spring", stiffness: 380, damping: 36, mass: 0.85 }}
             className="relative flex-1 overflow-hidden bg-ink"
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.18}
+            onDragEnd={(_, info) => {
+              if (limitHit) return;
+              const dy = info.offset.y;
+              const vy = info.velocity.y;
+              if (dy < -72 || vy < -650) next();
+              else if (dy > 72 || vy > 650) prev();
+            }}
           >
             <Image
               src={reel.posterUrl}
@@ -199,17 +287,19 @@ export default function ReelsPage() {
               className="object-cover"
               priority
               sizes="100vw"
+              quality={90}
+              draggable={false}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-ink/50" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-ink/50" />
 
-            <div className="absolute inset-x-4 top-16 z-10 h-[3px] overflow-hidden rounded-full bg-white/20">
+            <div className="pointer-events-none absolute inset-x-4 top-16 z-10 h-[3px] overflow-hidden rounded-full bg-white/20">
               <div
                 key={reel.id}
                 className="reel-progress h-full rounded-full bg-gradient-to-r from-coral to-mint"
               />
             </div>
 
-            <div className="absolute left-4 top-[4.75rem] z-10 flex flex-wrap gap-1.5">
+            <div className="pointer-events-none absolute left-4 top-[4.75rem] z-10 flex flex-wrap gap-1.5">
               <span
                 className={cn(
                   "rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
@@ -239,20 +329,10 @@ export default function ReelsPage() {
               )}
             </div>
 
-            <button
-              type="button"
-              className="absolute left-0 top-20 z-10 h-[70%] w-1/3"
-              aria-label="Previous reel"
-              onClick={prev}
-            />
-            <button
-              type="button"
-              className="absolute right-0 top-20 z-10 h-[70%] w-1/3"
-              aria-label="Next reel"
-              onClick={next}
-            />
-
-            <div className="absolute bottom-7 left-4 right-16 z-10 space-y-3">
+            <div
+              className="absolute bottom-7 left-4 right-16 z-10 space-y-3"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center gap-3">
                 <div className="relative h-11 w-11 overflow-hidden rounded-full ring-2 ring-white/80 shadow-lg">
                   <Image src={profile.photos[0]} alt="" fill className="object-cover" />
@@ -292,14 +372,17 @@ export default function ReelsPage() {
                   onClick={() => {
                     const res = like(reel.userId);
                     if (res.blocked) {
-                      setLimitHit(true);
+                      // Likes limit — don't reuse the Reels limit screen
+                      setLikesAdOpen(true);
                       return;
                     }
+                    setLikedReel((m) => ({ ...m, [reel.id]: true }));
                     if (res.matched) {
                       setCelebration({
                         name: profile.name,
                         photo: profile.photos[0],
                         myPhoto: user.photos[0],
+                        matchId: res.matchId,
                       });
                     }
                   }}
@@ -310,7 +393,10 @@ export default function ReelsPage() {
               )}
             </div>
 
-            <div className="absolute bottom-10 right-3 z-10 flex flex-col items-center gap-5">
+            <div
+              className="absolute bottom-10 right-3 z-10 flex flex-col items-center gap-5"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <button
                 type="button"
                 className="flex flex-col items-center gap-1"
@@ -344,6 +430,13 @@ export default function ReelsPage() {
       <MatchCelebration
         match={celebration}
         onClose={() => setCelebration(null)}
+      />
+
+      <RewardedAdGate
+        kind="likes"
+        open={likesAdOpen}
+        onClose={() => setLikesAdOpen(false)}
+        onEarned={() => setLikesAdOpen(false)}
       />
 
       <ReelComposer

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Play, X } from "lucide-react";
 import { showRewardedAd, usesNativeAds } from "@/lib/ads";
@@ -34,12 +34,17 @@ export function RewardedAdGate({
   const [left, setLeft] = useState(AD_SECONDS);
   const [error, setError] = useState("");
   const claimedRef = useRef(false);
+  const onEarnedRef = useRef(onEarned);
   const native = usesNativeAds();
 
   const cfg = AD_REWARDS[kind];
   const remaining = user ? adRewardsRemaining(user, kind) : 0;
 
-  const finishReward = useEffectEvent(() => {
+  useEffect(() => {
+    onEarnedRef.current = onEarned;
+  }, [onEarned]);
+
+  const finishReward = () => {
     if (claimedRef.current) return;
     claimedRef.current = true;
     const res = claimAdReward(kind);
@@ -54,28 +59,32 @@ export function RewardedAdGate({
       return;
     }
     setPhase("done");
-    onEarned?.(res.amount ?? cfg.amount);
-  });
+    onEarnedRef.current?.(res.amount ?? cfg.amount);
+  };
 
   useEffect(() => {
-    if (!open) {
+    if (open) return;
+    const id = window.setTimeout(() => {
       setPhase("ready");
       setLeft(AD_SECONDS);
       setError("");
       claimedRef.current = false;
-    }
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [open]);
 
   // Web demo countdown
   useEffect(() => {
     if (!open || phase !== "playing" || native) return;
     if (left <= 0) {
-      finishReward();
-      return;
+      const id = window.setTimeout(() => finishReward(), 0);
+      return () => window.clearTimeout(id);
     }
     const t = window.setTimeout(() => setLeft((s) => s - 1), 1000);
     return () => window.clearTimeout(t);
-  }, [open, phase, left, native, finishReward]);
+    // finishReward closes over latest claimAdReward/cfg via render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, phase, left, native]);
 
   const start = async () => {
     if (!user || !canWatchAdForReward(user, kind)) {

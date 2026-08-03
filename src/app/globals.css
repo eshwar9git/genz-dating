@@ -239,8 +239,21 @@ body {
   transform: scale(0.94);
 }
 
-/* Capacitor / native safe areas */
+/* Capacitor / native safe areas — top only on body; BottomNav owns bottom inset */
+:root {
+  --app-nav-clearance: calc(7rem + env(safe-area-inset-bottom, 0px));
+}
+
 .native-app body {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: 0;
+}
+
+.app-shell {
+  padding-bottom: var(--app-nav-clearance);
+}
+
+.app-screen-height {
+  height: calc(100dvh - var(--app-nav-clearance));
+  max-height: calc(100dvh - var(--app-nav-clearance));
 }

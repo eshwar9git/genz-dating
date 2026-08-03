@@ -73,3 +73,34 @@ export function currencyFromCountry(countryCode?: string): string {
   if (!countryCode) return "usd";
   return COUNTRY_CURRENCY[countryCode] ?? "usd";
 }
+
+export type DistanceUnit = "km" | "mi";
+
+/** Countries that use miles for road / everyday distance */
+const IMPERIAL_DISTANCE_COUNTRIES = new Set([
+  "US",
+  "GB",
+  "LR",
+  "MM",
+  "PR",
+  "VI",
+  "GU",
+  "AS",
+  "MP",
+]);
+
+export function distanceUnitFromCountry(countryCode?: string): DistanceUnit {
+  if (!countryCode) return "km";
+  return IMPERIAL_DISTANCE_COUNTRIES.has(countryCode.toUpperCase())
+    ? "mi"
+    : "km";
+}
+
+/** Format a distance stored in km using the country's everyday unit. */
+export function formatDistanceKm(km: number, countryCode?: string): string {
+  const unit = distanceUnitFromCountry(countryCode);
+  if (unit === "mi") {
+    return `${Math.max(1, Math.round(km * 0.621371))} mi`;
+  }
+  return `${Math.round(km)} km`;
+}

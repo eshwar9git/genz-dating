@@ -41,7 +41,7 @@ export function MatchExtras({ match }: { match: Match }) {
   const slots = useMemo(() => {
     if (!partner) return [];
     return overlappingSlots(user.timezone, partner.timezone, DATE_IDEAS);
-  }, [user.timezone, partner?.timezone, partner]);
+  }, [user.timezone, partner]);
 
   if (!partner) return null;
 

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, CircleHelp } from "lucide-react";
-import { BrandMark, Button } from "@/components/ui";
+import { Button } from "@/components/ui";
 import {
   FAQ_CATEGORIES,
   FAQ_ITEMS,
@@ -29,7 +29,9 @@ export default function FaqPage() {
   return (
     <div className="px-4 pt-5 pb-10">
       <header className="mb-6 flex items-center justify-between">
-        <BrandMark href="/discover" />
+        <h1 className="font-display text-2xl font-extrabold tracking-tight">
+          FAQ
+        </h1>
         <Link
           href="/profile"
           className="text-xs font-semibold text-muted transition hover:text-cream"
@@ -42,9 +44,9 @@ export default function FaqPage() {
         <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-coral/15 text-coral">
           <CircleHelp className="h-5 w-5" strokeWidth={2.2} />
         </div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">
-          FAQ
-        </h1>
+        <p className="font-display text-3xl font-extrabold tracking-tight">
+          How can we help?
+        </p>
         <p className="mt-2 max-w-[36ch] text-sm leading-relaxed text-muted">
           {activeBlurb}
         </p>

@@ -19,6 +19,7 @@ export default function RegisterPage() {
   const [gender, setGender] = useState<Gender>("woman");
   const [countryCode, setCountryCode] = useState("US");
   const [city, setCity] = useState("New York");
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
 
   const country = COUNTRIES.find((c) => c.code === countryCode)!;
@@ -28,6 +29,10 @@ export default function RegisterPage() {
     setError("");
     if (!name || !email || !birthday) {
       setError("Fill in all required fields.");
+      return;
+    }
+    if (!accepted) {
+      setError("Accept the Terms and Privacy Policy to continue.");
       return;
     }
     const age =
@@ -150,6 +155,31 @@ export default function RegisterPage() {
               </select>
             </label>
           </div>
+
+          <label className="flex items-start gap-3 rounded-2xl border border-line bg-ink-soft/50 px-3 py-3 text-sm text-cream/80">
+            <input
+              type="checkbox"
+              checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)}
+              className="mt-1 accent-coral"
+              required
+            />
+            <span>
+              I confirm I am 18+ and agree to the{" "}
+              <Link href="/legal/terms" className="text-mint underline">
+                Terms
+              </Link>
+              ,{" "}
+              <Link href="/legal/privacy" className="text-mint underline">
+                Privacy Policy
+              </Link>
+              , and{" "}
+              <Link href="/legal/community" className="text-mint underline">
+                Community Guidelines
+              </Link>
+              .
+            </span>
+          </label>
 
           {error && <p className="text-sm text-coral">{error}</p>}
 

@@ -7,7 +7,7 @@ import { FeatureTour } from "@/components/feature-tour";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
-      <div className="mesh-bg grain min-h-dvh pb-28">
+      <div className="mesh-bg grain app-shell min-h-dvh">
         <div className="relative z-10 mx-auto min-h-dvh max-w-lg">{children}</div>
         <BottomNav />
         <FeatureTour />

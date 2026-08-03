@@ -32,15 +32,25 @@ export function AuthGuard({
   if (!mounted || !hydrated || !user) {
     return (
       <div className="mesh-bg flex min-h-dvh items-center justify-center">
-        <p className="font-display text-2xl font-bold text-cream">
-          vibed<span className="text-coral">.</span>
-        </p>
+        <span
+          className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-coral"
+          role="status"
+          aria-label="Loading"
+        />
       </div>
     );
   }
 
   if (requireOnboarding && !user.onboardingComplete) {
-    return null;
+    return (
+      <div className="mesh-bg flex min-h-dvh items-center justify-center">
+        <span
+          className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-coral"
+          role="status"
+          aria-label="Loading"
+        />
+      </div>
+    );
   }
 
   return <>{children}</>;

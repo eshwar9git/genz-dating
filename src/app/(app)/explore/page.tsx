@@ -11,7 +11,7 @@ import {
   Trophy,
   Zap,
 } from "lucide-react";
-import { BrandMark, Button, Chip, LimitBanner, TextArea } from "@/components/ui";
+import { Button, Chip, LimitBanner, TextArea } from "@/components/ui";
 import {
   CITY_VIBE_PROMPTS,
   MAIN_CHARACTER_WEEK,
@@ -83,8 +83,7 @@ export default function ExplorePage() {
 
   return (
     <div className="px-4 pt-5 pb-8">
-      <BrandMark href="/discover" />
-      <h1 className="mt-4 font-display text-[1.85rem] font-extrabold tracking-tight">
+      <h1 className="font-display text-[1.85rem] font-extrabold tracking-tight">
         Explore
       </h1>
       <p className="mt-1 text-sm text-muted">

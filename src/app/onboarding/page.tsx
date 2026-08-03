@@ -12,17 +12,18 @@ import {
   LOOKING_FOR_OPTIONS,
   PROMPTS,
 } from "@/lib/constants";
+import { distanceUnitFromCountry, formatDistanceKm } from "@/lib/i18n";
 import { useAppStore } from "@/lib/store";
 import type { Gender, LookingFor, PromptAnswer } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const DEMO_PHOTOS = [
-  "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=1000&fit=crop",
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=1000&fit=crop",
-  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=1000&fit=crop",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=1000&fit=crop",
-  "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&h=1000&fit=crop",
-  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=1000&fit=crop",
+  "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=1600&h=2000&q=90&crop=faces",
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1600&h=2000&q=90&crop=faces",
+  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1600&h=2000&q=90&crop=faces",
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1600&h=2000&q=90&crop=faces",
+  "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=1600&h=2000&q=90&crop=faces",
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=1600&h=2000&q=90&crop=faces",
 ];
 
 const STEPS = ["Photos", "About you", "Dating goals", "Interests", "Prompts", "Preferences"];
@@ -47,12 +48,21 @@ function OnboardingInner() {
           { prompt: PROMPTS[1], answer: "" },
         ]
   );
-  const [genders, setGenders] = useState<Gender[]>(["woman", "man"]);
-  const [ageMin, setAgeMin] = useState(18);
-  const [ageMax, setAgeMax] = useState(35);
-  const [maxDistanceKm, setMaxDistanceKm] = useState(80);
-  const [globalMode, setGlobalMode] = useState(true);
+  const [genders, setGenders] = useState<Gender[]>(
+    user.preferences?.genders?.length
+      ? user.preferences.genders
+      : ["woman", "man"]
+  );
+  const [ageMin, setAgeMin] = useState(user.preferences?.ageMin ?? 18);
+  const [ageMax, setAgeMax] = useState(user.preferences?.ageMax ?? 35);
+  const [maxDistanceKm, setMaxDistanceKm] = useState(
+    user.preferences?.maxDistanceKm ?? 80
+  );
+  const [globalMode, setGlobalMode] = useState(
+    user.preferences?.globalMode ?? true
+  );
   const [error, setError] = useState("");
+  const distanceUnit = distanceUnitFromCountry(user.countryCode);
 
   useEffect(() => {
     if (user.onboardingComplete && !editing) router.replace("/discover");
@@ -90,11 +100,6 @@ function OnboardingInner() {
     return true;
   }, [step, photos, bio, lookingFor, interests, prompts, genders]);
 
-  // Clear stale validation once the current step becomes valid
-  useEffect(() => {
-    if (canNext && error) setError("");
-  }, [canNext, error]);
-
   const finish = () => {
     completeOnboarding({
       photos,
@@ -109,10 +114,10 @@ function OnboardingInner() {
         ageMax,
         maxDistanceKm,
         lookingFor,
-        interests: [],
-        countries: [],
+        interests: user.preferences?.interests ?? [],
+        countries: user.preferences?.countries ?? [],
         globalMode,
-        reelFlagFilter: "all",
+        reelFlagFilter: user.preferences?.reelFlagFilter ?? "all",
       },
     });
     router.push("/discover");
@@ -165,7 +170,15 @@ function OnboardingInner() {
                     >
                       {photo ? (
                         <>
-                          <Image src={photo} alt="" fill className="object-cover" unoptimized={photo.startsWith("data:")} />
+                          <Image
+                            src={photo}
+                            alt=""
+                            fill
+                            sizes="33vw"
+                            quality={90}
+                            className="object-cover"
+                            unoptimized={photo.startsWith("data:")}
+                          />
                           <button
                             type="button"
                             className="absolute right-1 top-1 rounded-full bg-ink/70 px-2 text-xs"
@@ -343,14 +356,14 @@ function OnboardingInner() {
               <div>
                 <div className="mb-2 flex justify-between text-sm">
                   <span className="text-muted">Max distance</span>
-                  <span>{maxDistanceKm} km</span>
+                  <span>{formatDistanceKm(maxDistanceKm, user.countryCode)}</span>
                 </div>
                 <input
                   type="range"
                   min={5}
                   max={200}
                   value={maxDistanceKm}
-                  aria-label="Maximum distance in kilometers"
+                  aria-label={`Maximum distance in ${distanceUnit === "mi" ? "miles" : "kilometers"}`}
                   onChange={(e) => setMaxDistanceKm(Number(e.target.value))}
                   className="w-full accent-mint"
                 />
@@ -388,7 +401,9 @@ function OnboardingInner() {
           )}
         </div>
 
-        {error && <p className="mt-2 text-sm text-coral">{error}</p>}
+        {error && !canNext && (
+          <p className="mt-2 text-sm text-coral">{error}</p>
+        )}
 
         <div className="mt-6 flex gap-3">
           <Button
@@ -399,7 +414,7 @@ function OnboardingInner() {
           >
             <ChevronLeft className="h-4 w-4" /> Back
           </Button>
-          <Button className="flex-1" onClick={next}>
+          <Button className="flex-1" disabled={!canNext} onClick={next}>
             {step === STEPS.length - 1 ? "Start vibing" : "Next"}
             {step < STEPS.length - 1 && <ChevronRight className="h-4 w-4" />}
           </Button>
@@ -415,7 +430,11 @@ export default function OnboardingPage() {
       <Suspense
         fallback={
           <div className="mesh-bg flex min-h-dvh items-center justify-center">
-            <p className="font-display text-2xl font-bold">vibed.</p>
+            <span
+              className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-coral"
+              role="status"
+              aria-label="Loading"
+            />
           </div>
         }
       >

@@ -32,14 +32,14 @@ App runs at `http://localhost:2000`.
 
 ## 2. Point the native apps at your server
 
-Default in `capacitor.config.ts` is `http://10.0.2.2:2000` (Android emulator → your PC).
+Default in `capacitor.config.ts` is `http://localhost:2000` plus `adb reverse`
+(works for **USB phone and emulator**). Run `npm run mobile:fix:android` to set reverse on all devices.
 
 | Target | Set `CAPACITOR_SERVER_URL` to |
 |---|---|
-| Android emulator | `http://10.0.2.2:2000` (default, no reverse needed) |
-| Android emulator (alt) | `http://localhost:2000` + `adb reverse tcp:2000 tcp:2000` |
-| iOS simulator | `http://localhost:2000` |
-| Physical phone (same Wi‑Fi) | `http://YOUR_PC_IP:2000` (e.g. `http://192.168.1.42:2000`) |
+| USB phone or emulator | `http://localhost:2000` (default) + `adb reverse` |
+| Android emulator (no reverse) | `http://10.0.2.2:2000` |
+| Physical phone (Wi‑Fi only) | `http://YOUR_PC_IP:2000` (e.g. `http://192.168.1.42:2000`) |
 | Production | `https://your-domain.com` |
 
 **Windows — one-shot fix for the emulator:**
@@ -206,7 +206,9 @@ Premium uses the same Stripe Checkout API as web. On native:
 ## Store release checklist
 
 1. Deploy Next.js to HTTPS (Vercel) and set `CAPACITOR_SERVER_URL` to that URL  
-2. Replace launcher icons in `android/app/src/main/res/` and `ios/App/App/Assets.xcassets`  
+2. App icons are in `branding/` (masters) + Android `mipmap-*` + iOS `AppIcon.appiconset` — regenerate with a new 1024 PNG if you redesign  
+   - Play Store listing: `branding/vibed-play-store-512.png`  
+   - App Store listing: `branding/vibed-app-icon-1024.png` (same as iOS AppIcon)  
 3. Set version codes in Android Studio / Xcode  
 4. Apple Developer account ($99/yr) + App Store Connect  
 5. Google Play Console (one-time fee)  

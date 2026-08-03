@@ -10,6 +10,7 @@ export type MatchCelebrationData = {
   name: string;
   photo: string;
   myPhoto?: string;
+  matchId?: string;
 };
 
 /**
@@ -130,7 +131,9 @@ export function MatchCelebration({
                 type="button"
                 onClick={() => {
                   close();
-                  router.push("/matches");
+                  router.push(
+                    match.matchId ? `/matches/${match.matchId}` : "/matches"
+                  );
                 }}
               >
                 {t.discover.sendMessage}

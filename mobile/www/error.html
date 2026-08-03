@@ -21,6 +21,8 @@
         display: grid;
         place-items: center;
         padding: 1.5rem;
+        padding-top: max(1.5rem, env(safe-area-inset-top));
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
       }
       .wrap {
         max-width: 22rem;
@@ -38,8 +40,9 @@
         font-size: 1.15rem;
       }
       p,
-      li {
-        opacity: 0.7;
+      li,
+      summary {
+        opacity: 0.75;
         font-size: 0.88rem;
         line-height: 1.45;
       }
@@ -51,28 +54,49 @@
         color: #3dffb5;
         font-size: 0.8rem;
       }
+      button {
+        margin-top: 1.25rem;
+        width: 100%;
+        border: 0;
+        border-radius: 999px;
+        padding: 0.85rem 1rem;
+        font-weight: 700;
+        background: #ff3d68;
+        color: #fff;
+      }
+      details {
+        margin-top: 1.25rem;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
       <div class="brand">vibed<span class="dot">.</span></div>
-      <h1>Can't reach the vibed server</h1>
+      <h1>Can't reach vibed right now</h1>
       <p>
-        The Android app loads your Next.js app from the host machine. Fix these,
-        then rebuild:
+        Check your internet connection, then try again. If the problem
+        continues, update the app or visit vibed from your browser.
       </p>
-      <ol>
-        <li>On your PC run <code>npm run dev</code> (port 2000).</li>
-        <li>
-          Sync for emulator:
-          <code>npm run mobile:sync:android</code>
-        </li>
-        <li>Rebuild / Run in Android Studio.</li>
-        <li>
-          Emulator URL must be <code>http://10.0.2.2:2000</code> (not
-          localhost).
-        </li>
-      </ol>
+      <button type="button" onclick="location.reload()">Try again</button>
+
+      <details>
+        <summary>Developer tips (local builds)</summary>
+        <ol>
+          <li>On your PC run <code>npm run dev</code> (port 2000).</li>
+          <li>
+            Run <code>npm run mobile:fix:android</code> (Cap URL + adb reverse).
+          </li>
+          <li>
+            For store builds set
+            <code>CAPACITOR_SERVER_URL=https://your-domain.com</code> then
+            <code>npm run mobile:sync</code>.
+          </li>
+        </ol>
+      </details>
     </div>
   </body>
 </html>

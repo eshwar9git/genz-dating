@@ -10,7 +10,7 @@ import {
 } from "@/components/match-celebration";
 import { ProfileCard } from "@/components/profile-card";
 import { AdLimitBanner, RewardedAdGate } from "@/components/rewarded-ad";
-import { BrandMark, Button } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { MOCK_PROFILES } from "@/lib/mock-data";
 import { useLocaleStore } from "@/lib/locale-store";
 import { useAppStore } from "@/lib/store";
@@ -38,19 +38,24 @@ export default function DiscoverPage() {
   );
   const [adOpen, setAdOpen] = useState(false);
 
-  const showVibed = (profile: { name: string; photos: string[] }) => {
+  const showVibed = (
+    profile: { name: string; photos: string[] },
+    matchId?: string
+  ) => {
     setCelebration({
       name: profile.name,
       photo: profile.photos[0],
       myPhoto: user.photos[0],
+      matchId,
     });
   };
 
   const deck = useMemo(() => {
     const seen = new Set([...user.likedIds, ...user.passedIds]);
     const prefs = user.preferences;
+    const blocked = new Set(user.blockedIds ?? []);
     return MOCK_PROFILES.filter((p) => {
-      if (p.id === user.id || seen.has(p.id)) return false;
+      if (p.id === user.id || seen.has(p.id) || blocked.has(p.id)) return false;
       if (!prefs.genders.includes(p.gender)) return false;
       if (p.age < prefs.ageMin || p.age > prefs.ageMax) return false;
       if (!prefs.globalMode && p.distanceKm > prefs.maxDistanceKm) return false;
@@ -75,7 +80,7 @@ export default function DiscoverPage() {
       setLimitKind("likes");
       return;
     }
-    if (res.matched) showVibed(current);
+    if (res.matched) showVibed(current, res.matchId);
   };
 
   const handleSuper = () => {
@@ -85,7 +90,7 @@ export default function DiscoverPage() {
       setLimitKind("super");
       return;
     }
-    if (res.matched) showVibed(current);
+    if (res.matched) showVibed(current, res.matchId);
   };
 
   const handlePass = () => {
@@ -99,12 +104,14 @@ export default function DiscoverPage() {
   };
 
   return (
-    <div className="relative flex min-h-dvh flex-col px-4 pt-5">
+    <div className="relative flex min-h-[calc(100dvh-var(--app-nav-clearance))] flex-col px-4 pt-5">
       <div className="pointer-events-none absolute -left-10 top-20 h-40 w-40 rounded-full bg-coral/10 blur-3xl" />
       <div className="pointer-events-none absolute -right-8 top-40 h-36 w-36 rounded-full bg-mint/10 blur-3xl" />
 
       <header className="relative z-10 mb-3 flex items-center justify-between">
-        <BrandMark href="/discover" />
+        <h1 className="font-display text-2xl font-extrabold tracking-tight">
+          {t.nav.discover}
+        </h1>
         <div className="flex items-center gap-2">
           <Link
             href="/explore"
@@ -219,8 +226,8 @@ export default function DiscoverPage() {
           kind={limitKind}
           open={adOpen}
           onClose={() => {
+            // Keep the limit banner visible so they can retry or upgrade
             setAdOpen(false);
-            setLimitKind(null);
           }}
           onEarned={() => {
             setLimitKind(null);

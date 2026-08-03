@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft, Lock } from "lucide-react";
-import { BrandMark, Button, Chip, LimitBanner } from "@/components/ui";
+import { Button, Chip, LimitBanner } from "@/components/ui";
 import { GENDER_OPTIONS, LOOKING_FOR_OPTIONS } from "@/lib/constants";
+import { distanceUnitFromCountry, formatDistanceKm } from "@/lib/i18n";
 import { useAppStore } from "@/lib/store";
 import type { Gender, LookingFor } from "@/lib/types";
 import { canUseAdvancedFilters, cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ export default function PreferencesPage() {
   const updatePreferences = useAppStore((s) => s.updatePreferences);
   const prefs = user.preferences;
   const advanced = canUseAdvancedFilters(user);
+  const distanceUnit = distanceUnitFromCountry(user.countryCode);
 
   const [genders, setGenders] = useState<Gender[]>(prefs.genders);
   const [ageMin, setAgeMin] = useState(prefs.ageMin);
@@ -32,7 +34,8 @@ export default function PreferencesPage() {
       ageMin,
       ageMax,
       maxDistanceKm,
-      lookingFor: advanced ? lookingFor : [],
+      // Free can't edit advanced filters — keep existing lookingFor / globalMode
+      lookingFor: advanced ? lookingFor : prefs.lookingFor,
       globalMode: advanced ? globalMode : prefs.globalMode,
     });
     setSaved(true);
@@ -40,16 +43,15 @@ export default function PreferencesPage() {
   };
 
   return (
-    <div className="px-4 pt-5 pb-10">
+    <div className="px-4 pt-5 pb-16">
       <div className="flex items-center gap-3">
         <Link href="/discover" className="rounded-full border border-line p-2">
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <BrandMark href="/discover" />
+        <h1 className="font-display text-2xl font-bold">Discovery preferences</h1>
       </div>
 
-      <h1 className="mt-6 font-display text-2xl font-bold">Discovery preferences</h1>
-      <p className="mt-1 text-sm text-muted">
+      <p className="mt-3 text-sm text-muted">
         Tune who shows up — basic filters free, advanced filters on Plus+.
       </p>
 
@@ -101,14 +103,14 @@ export default function PreferencesPage() {
         <section>
           <div className="mb-2 flex justify-between text-sm">
             <span className="text-muted">Distance</span>
-            <span>{maxDistanceKm} km</span>
+            <span>{formatDistanceKm(maxDistanceKm, user.countryCode)}</span>
           </div>
           <input
             type="range"
             min={5}
             max={200}
             value={maxDistanceKm}
-            aria-label="Maximum distance in kilometers"
+            aria-label={`Maximum distance in ${distanceUnit === "mi" ? "miles" : "kilometers"}`}
             onChange={(e) => setMaxDistanceKm(Number(e.target.value))}
             className="w-full accent-mint"
             disabled={globalMode && advanced}

@@ -83,6 +83,17 @@ export default function LandingPage() {
           <p className="mt-8 text-center text-[11px] tracking-[0.18em] text-cream/40 uppercase">
             {t.landing.worldwide}
           </p>
+          <p className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-center text-[11px] text-cream/45">
+            <Link href="/legal/terms" className="hover:text-cream/80">
+              Terms
+            </Link>
+            <Link href="/legal/privacy" className="hover:text-cream/80">
+              Privacy
+            </Link>
+            <Link href="/legal/community" className="hover:text-cream/80">
+              Community
+            </Link>
+          </p>
         </main>
       </div>
     </div>

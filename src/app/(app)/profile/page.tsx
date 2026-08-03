@@ -10,9 +10,10 @@ import {
   LogOut,
   Settings2,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { BrandMark, Button } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { AD_REWARDS, PLANS } from "@/lib/constants";
 import { useLocaleStore } from "@/lib/locale-store";
 import { useAppStore } from "@/lib/store";
@@ -30,6 +31,7 @@ import {
 export default function ProfilePage() {
   const user = useAppStore((s) => s.user)!;
   const logout = useAppStore((s) => s.logout);
+  const deleteAccount = useAppStore((s) => s.deleteAccount);
   const t = useLocaleStore((s) => s.t)();
   const usage = maybeResetUsage(user.usage);
   const limits = getLimits(user.tier);
@@ -41,7 +43,9 @@ export default function ProfilePage() {
   return (
     <div className="px-4 pt-5 pb-8">
       <header className="mb-6 flex items-center justify-between">
-        <BrandMark href="/discover" />
+        <h1 className="font-display text-2xl font-extrabold tracking-tight">
+          {t.nav.profile}
+        </h1>
         <Link href="/preferences" className="rounded-full border border-line p-2 text-muted">
           <Settings2 className="h-4 w-4" />
         </Link>
@@ -202,8 +206,19 @@ export default function ProfilePage() {
             <CircleHelp className="h-4 w-4 text-muted" />
           </Button>
         </Link>
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 py-2 text-center text-xs text-muted">
+          <Link href="/legal/terms" className="hover:text-mint">
+            Terms
+          </Link>
+          <Link href="/legal/privacy" className="hover:text-mint">
+            Privacy
+          </Link>
+          <Link href="/legal/community" className="hover:text-mint">
+            Community
+          </Link>
+        </div>
         <Button
-          variant="danger"
+          variant="secondary"
           className="w-full"
           onClick={() => {
             logout();
@@ -211,6 +226,20 @@ export default function ProfilePage() {
           }}
         >
           <LogOut className="h-4 w-4" /> Log out
+        </Button>
+        <Button
+          variant="danger"
+          className="w-full"
+          onClick={() => {
+            const ok = window.confirm(
+              "Delete your vibed account and all local data on this device? This cannot be undone."
+            );
+            if (!ok) return;
+            deleteAccount();
+            window.location.href = "/";
+          }}
+        >
+          <Trash2 className="h-4 w-4" /> Delete account
         </Button>
       </div>
     </div>

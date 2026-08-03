@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Send } from "lucide-react";
 import { MatchExtras } from "@/components/match-extras";
+import { SafetyActions } from "@/components/safety-actions";
 import { Button } from "@/components/ui";
 import { SITUATIONSHIP_OPTIONS } from "@/lib/constants";
 import { getProfileById } from "@/lib/mock-data";
@@ -61,13 +62,19 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-6.5rem)] flex-col">
+    <div className="app-screen-height flex flex-col">
       <header className="flex items-center gap-3 border-b border-line px-4 py-3">
         <Link href="/matches" className="rounded-full p-2 hover:bg-white/5">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-coral/30">
-          <Image src={profile.photos[0]} alt="" fill className="object-cover" />
+          <Image
+            src={profile.photos[0]}
+            alt=""
+            fill
+            sizes="40px"
+            className="object-cover"
+          />
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-display font-bold tracking-tight">{profile.name}</p>
@@ -76,13 +83,20 @@ export default function ChatPage() {
             {!vibeDone && " · Vibe Check pending"}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowExtras((v) => !v)}
-          className="rounded-full border border-white/10 px-3 py-1.5 text-[11px] font-semibold text-mint"
-        >
-          {showExtras ? "Hide" : "Vibes"}
-        </button>
+        <div className="flex items-center gap-2">
+          <SafetyActions
+            profileId={profile.id}
+            profileName={profile.name}
+            compact
+          />
+          <button
+            type="button"
+            onClick={() => setShowExtras((v) => !v)}
+            className="rounded-full border border-white/10 px-3 py-1.5 text-[11px] font-semibold text-mint"
+          >
+            {showExtras ? "Hide" : "Vibes"}
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">

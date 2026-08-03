@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Manrope, Syne } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
@@ -21,6 +21,13 @@ export const metadata: Metadata = {
     "Swipe, soft-launch, and GenZ Reels. Dating for situationships, serious arcs, and everything in between — worldwide.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#07080c",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,6 +37,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${syne.variable} ${manrope.variable} h-full`}
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <body className="min-h-full antialiased" suppressHydrationWarning>

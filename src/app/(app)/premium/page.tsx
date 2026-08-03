@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, Crown, Globe, Loader2 } from "lucide-react";
-import { BrandMark, Button } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { COUNTRIES, PLANS } from "@/lib/constants";
 import { useLocaleStore } from "@/lib/locale-store";
 import { useAppStore } from "@/lib/store";
@@ -93,8 +93,7 @@ export default function PremiumPage() {
 
   return (
     <div className="px-4 pt-5 pb-10">
-      <BrandMark href="/discover" />
-      <div className="mt-5">
+      <div>
         <p className="text-sm uppercase tracking-[0.18em] text-mint">
           {t.premium.eyebrow}
         </p>
